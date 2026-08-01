@@ -28,7 +28,7 @@ public class GeminiFeedbackService {
     public GeminiFeedbackService(
             @Value("${gemini.base-url:https://generativelanguage.googleapis.com}") String baseUrl,
             @Value("${gemini.api-key:}") String apiKey,
-            @Value("${gemini.model:gemini-2.0-flash}") String model) {
+            @Value("${gemini.model:gemini-2.5-flash}") String model) {
         this.restClient = RestClient.builder().baseUrl(baseUrl).build();
         this.apiKey = apiKey;
         this.model = model;
