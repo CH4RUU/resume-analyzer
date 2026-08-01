@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Resume Analyzer</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <h1>Resume Analyzer</h1>
+  <p class="subtitle">Upload a resume and (optionally) a job description to get an instant score and feedback.</p>
+</header>
+
+<main>
+  <section class="card" id="upload-card">
+    <form id="analyze-form">
+      <label class="file-drop" id="file-drop">
+        <input type="file" id="resume-file" name="resume" accept=".pdf,.docx,.txt,.md" required />
+        <span id="file-label">Click to choose a resume (PDF, DOCX or TXT)</span>
+      </label>
+
+      <label for="job-description">Job description (optional)</label>
+      <textarea id="job-description" name="jobDescription" rows="6"
+        placeholder="Paste the job description here to score your resume against it..."></textarea>
+
+      <button type="submit" id="submit-btn">Analyze Resume</button>
+    </form>
+    <p class="error" id="error-box" hidden></p>
+  </section>
+
+  <section class="card" id="result-card" hidden>
+    <div class="score-header">
+      <div class="score-circle" id="overall-score">--</div>
+      <div>
+        <h2>Overall Score</h2>
+        <p id="file-meta"></p>
+      </div>
+    </div>
+
+    <div class="subscores" id="subscores"></div>
+
+    <div class="columns">
+      <div>
+        <h3>Matched Skills</h3>
+        <div class="chips" id="matched-skills"></div>
+      </div>
+      <div>
+        <h3>Missing Skills</h3>
+        <div class="chips missing" id="missing-skills"></div>
+      </div>
+    </div>
+
+    <h3>Suggestions</h3>
+    <ul id="suggestions"></ul>
+
+    <div class="ai-feedback-block">
+      <button type="button" id="ai-feedback-btn" class="secondary-btn">Get AI Feedback</button>
+      <p class="error" id="ai-error-box" hidden></p>
+      <div id="ai-feedback-result" hidden>
+        <h3>AI Feedback</h3>
+        <p id="ai-feedback-text"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="history-card">
+    <h2>Recent Analyses</h2>
+    <table id="history-table">
+      <thead>
+        <tr><th>File</th><th>Score</th><th>Date</th><th></th></tr>
+      </thead>
+      <tbody id="history-body"></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
