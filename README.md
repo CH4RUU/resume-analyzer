@@ -28,23 +28,25 @@ served directly by Spring Boot — no separate frontend build step required.
 These combine into a weighted `overallScore` (0-100), plus a list of matched skills, missing
 skills, and human-readable suggestions. The skill vocabulary lives in `SkillCatalog`.
 
-## Optional AI feedback (Claude API)
+## Optional AI feedback (Google Gemini API)
 
 On top of the free rule-based scoring, `POST /api/analyses/{id}/ai-feedback` can generate a
-narrative review (strongest points, weaknesses, concrete edits) using the Claude API. It's
-opt-in and costs money per call, so it's disabled by default.
+narrative review (strongest points, weaknesses, concrete edits) using the Gemini API. Gemini has
+a free tier (generous daily request limits, no credit card required), so this can run at no cost.
+It's still opt-in and disabled by default until a key is configured.
 
-To enable it, set an environment variable before starting the app:
+To enable it, get a free key from [Google AI Studio](https://aistudio.google.com/apikey) and set
+an environment variable before starting the app:
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+export GEMINI_API_KEY=...
 ./mvnw spring-boot:run
 ```
 
 Without the key set, the endpoint returns `503 Service Unavailable` with a clear message instead
 of failing — the rest of the app (scoring, history, everything else) works exactly the same
-either way. The model used is configurable via `anthropic.model` in `application.properties`
-(defaults to `claude-sonnet-5`).
+either way. The model used is configurable via `gemini.model` in `application.properties`
+(defaults to `gemini-2.0-flash`).
 
 ## Prerequisites
 
@@ -115,7 +117,7 @@ Tests use an in-memory H2 database, so no MySQL connection is needed:
 | GET    | `/api/analyses`       | List past analyses (most recent first)            |
 | GET    | `/api/analyses/{id}`  | Get one analysis in full detail                    |
 | DELETE | `/api/analyses/{id}`  | Delete an analysis                                  |
-| POST   | `/api/analyses/{id}/ai-feedback` | Generate AI feedback via Claude (needs `ANTHROPIC_API_KEY`); form param `jobDescription` (optional) |
+| POST   | `/api/analyses/{id}/ai-feedback` | Generate AI feedback via Gemini (needs `GEMINI_API_KEY`); form param `jobDescription` (optional) |
 
 ## Deploying for free
 
@@ -145,7 +147,7 @@ Render deploys straight from a GitHub repo.
    - `SPRING_DATASOURCE_URL` = `jdbc:mysql://<clever-cloud-host>:<port>/<db-name>?useSSL=false&allowPublicKeyRetrieval=true`
    - `SPRING_DATASOURCE_USERNAME` = the Clever Cloud MySQL user
    - `SPRING_DATASOURCE_PASSWORD` = the Clever Cloud MySQL password
-   - `ANTHROPIC_API_KEY` = (optional) your Anthropic key, only if you want the AI feedback endpoint live
+   - `GEMINI_API_KEY` = (optional) your free Gemini key from [Google AI Studio](https://aistudio.google.com/apikey), only if you want the AI feedback endpoint live
 4. Deploy. Render builds the `Dockerfile` and starts the container; `PORT` is injected
    automatically and the app already binds to it (`server.port=${PORT:8080}`).
 

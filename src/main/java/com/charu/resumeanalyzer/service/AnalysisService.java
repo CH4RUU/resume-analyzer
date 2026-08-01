@@ -16,14 +16,14 @@ public class AnalysisService {
 
     private final TextExtractor textExtractor;
     private final ResumeAnalyzer resumeAnalyzer;
-    private final ClaudeFeedbackService claudeFeedbackService;
+    private final GeminiFeedbackService geminiFeedbackService;
     private final AnalysisRepository repository;
 
     public AnalysisService(TextExtractor textExtractor, ResumeAnalyzer resumeAnalyzer,
-            ClaudeFeedbackService claudeFeedbackService, AnalysisRepository repository) {
+            GeminiFeedbackService geminiFeedbackService, AnalysisRepository repository) {
         this.textExtractor = textExtractor;
         this.resumeAnalyzer = resumeAnalyzer;
-        this.claudeFeedbackService = claudeFeedbackService;
+        this.geminiFeedbackService = geminiFeedbackService;
         this.repository = repository;
     }
 
@@ -52,7 +52,7 @@ public class AnalysisService {
     @Transactional
     public Analysis generateAiFeedback(Long id, String jobDescription) {
         Analysis analysis = get(id);
-        String feedback = claudeFeedbackService.generateFeedback(analysis, jobDescription);
+        String feedback = geminiFeedbackService.generateFeedback(analysis, jobDescription);
         analysis.setAiFeedback(feedback);
         return repository.save(analysis);
     }

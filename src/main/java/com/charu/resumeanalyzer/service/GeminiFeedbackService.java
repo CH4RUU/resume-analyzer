@@ -12,11 +12,11 @@ import com.charu.resumeanalyzer.web.BadRequestException;
 
 /**
  * Optional AI-powered feedback layer on top of the rule-based {@link ResumeAnalyzer}.
- * Only active when an Anthropic API key is configured; otherwise every call fails fast
+ * Only active when a Gemini API key is configured; otherwise every call fails fast
  * with {@link AiNotConfiguredException} so callers can degrade gracefully.
  */
 @Service
-public class ClaudeFeedbackService {
+public class GeminiFeedbackService {
 
     private static final int MAX_RESUME_CHARS = 6000;
     private static final int MAX_JOB_DESCRIPTION_CHARS = 3000;
@@ -25,10 +25,10 @@ public class ClaudeFeedbackService {
     private final String apiKey;
     private final String model;
 
-    public ClaudeFeedbackService(
-            @Value("${anthropic.base-url:https://api.anthropic.com}") String baseUrl,
-            @Value("${anthropic.api-key:}") String apiKey,
-            @Value("${anthropic.model:claude-sonnet-5}") String model) {
+    public GeminiFeedbackService(
+            @Value("${gemini.base-url:https://generativelanguage.googleapis.com}") String baseUrl,
+            @Value("${gemini.api-key:}") String apiKey,
+            @Value("${gemini.model:gemini-2.0-flash}") String model) {
         this.restClient = RestClient.builder().baseUrl(baseUrl).build();
         this.apiKey = apiKey;
         this.model = model;
@@ -41,32 +41,36 @@ public class ClaudeFeedbackService {
     public String generateFeedback(Analysis analysis, String jobDescription) {
         if (!isEnabled()) {
             throw new AiNotConfiguredException(
-                    "AI feedback is not configured on this server. Set the ANTHROPIC_API_KEY environment variable to enable it.");
+                    "AI feedback is not configured on this server. Set the GEMINI_API_KEY environment variable to enable it.");
         }
 
         String prompt = buildPrompt(analysis, jobDescription);
 
-        MessageRequest request = new MessageRequest(model, 700,
-                List.of(new MessageRequest.Message("user", prompt)));
+        GenerateContentRequest request = new GenerateContentRequest(
+                List.of(new GenerateContentRequest.Content(
+                        List.of(new GenerateContentRequest.Content.Part(prompt)))));
 
-        MessageResponse response;
+        GenerateContentResponse response;
         try {
             response = restClient.post()
-                    .uri("/v1/messages")
-                    .header("x-api-key", apiKey)
-                    .header("anthropic-version", "2023-06-01")
+                    .uri("/v1beta/models/{model}:generateContent?key={key}", model, apiKey)
                     .header("content-type", "application/json")
                     .body(request)
                     .retrieve()
-                    .body(MessageResponse.class);
+                    .body(GenerateContentResponse.class);
         } catch (Exception e) {
             throw new BadRequestException("Failed to reach the AI feedback service: " + e.getMessage());
         }
 
-        if (response == null || response.content() == null || response.content().isEmpty()) {
+        if (response == null || response.candidates() == null || response.candidates().isEmpty()) {
             throw new BadRequestException("The AI feedback service returned an empty response.");
         }
-        return response.content().get(0).text();
+        List<GenerateContentResponse.Candidate.Content.Part> parts =
+                response.candidates().get(0).content().parts();
+        if (parts == null || parts.isEmpty()) {
+            throw new BadRequestException("The AI feedback service returned an empty response.");
+        }
+        return parts.get(0).text();
     }
 
     private String buildPrompt(Analysis analysis, String jobDescription) {
@@ -103,13 +107,19 @@ public class ClaudeFeedbackService {
         return text.length() <= maxChars ? text : text.substring(0, maxChars) + "...";
     }
 
-    private record MessageRequest(String model, int max_tokens, List<Message> messages) {
-        private record Message(String role, String content) {
+    private record GenerateContentRequest(List<Content> contents) {
+        private record Content(List<Part> parts) {
+            private record Part(String text) {
+            }
         }
     }
 
-    private record MessageResponse(List<ContentBlock> content) {
-        private record ContentBlock(String type, String text) {
+    private record GenerateContentResponse(List<Candidate> candidates) {
+        private record Candidate(Content content) {
+            private record Content(List<Part> parts) {
+                private record Part(String text) {
+                }
+            }
         }
     }
 }
